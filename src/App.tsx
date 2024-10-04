@@ -24,7 +24,7 @@ export const App: React.FC = () => {
   useEffect(() => {
     dispatch(loadTodosFromServer());
     setTimeout(() => dispatch(handleErrorNotification('')), 3000);
-  }, []);
+  }, [dispatch]);
 
   return (
     <div className="todoapp">
