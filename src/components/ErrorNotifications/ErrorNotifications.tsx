@@ -1,12 +1,13 @@
-import { useDispatch, useGlobalState } from '../../GlobalStateProvider';
-import { Type } from '../../types/Action';
+import { useAppDispatch, useAppSelector } from '../../app/hooks';
+import { handleErrorNotification } from '../../features/todosSlice';
 
 export const ErrorNotifications: React.FC = () => {
-  const { errorMessage } = useGlobalState();
-  const dispatch = useDispatch();
+  const errorMessage = useAppSelector(state => state.todos.error);
 
-  const handleHideError = () => {
-    dispatch({ type: Type.setErrorMessage, payload: '' });
+  const dispatch = useAppDispatch();
+
+  const hideErrorNotification = () => {
+    dispatch(handleErrorNotification(''));
   };
 
   return (
@@ -21,7 +22,7 @@ export const ErrorNotifications: React.FC = () => {
         data-cy="HideErrorButton"
         type="button"
         className="delete"
-        onClick={handleHideError}
+        onClick={hideErrorNotification}
       />
       {errorMessage}
     </div>

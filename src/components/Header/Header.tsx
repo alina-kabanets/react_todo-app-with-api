@@ -1,19 +1,13 @@
-import { TodoForm } from '../TodoForm/TodoForm';
-import { useDispatch, useGlobalState } from '../../GlobalStateProvider';
-import { Type } from '../../types/Action';
-import { Todo } from '../../types/Todo';
+import { NewTodoForm } from '../NewTodoForm/NewTodoForm';
+import { useAppDispatch, useAppSelector } from '../../app/hooks';
+import {
+  handleErrorNotification,
+  updateTodoCheckStatus,
+} from '../../features/todosSlice';
 
-type Props = {
-  handleError: (message: string) => void;
-  updateTodoCheckOnServer: (arg: Todo) => void;
-};
-
-export const Header: React.FC<Props> = ({
-  handleError,
-  updateTodoCheckOnServer,
-}) => {
-  const { todos } = useGlobalState();
-  const dispatch = useDispatch();
+export const Header: React.FC = () => {
+  const todos = useAppSelector(state => state.todos.items);
+  const dispatch = useAppDispatch();
 
   const allChecked = todos.every(todo => todo.completed);
 
@@ -23,8 +17,8 @@ export const Header: React.FC<Props> = ({
         return;
       }
 
-      dispatch({ type: Type.setLoadingTodos, payload: todo.id });
-      updateTodoCheckOnServer({ ...todo, completed: !allChecked });
+      dispatch(updateTodoCheckStatus({ ...todo, completed: !allChecked }));
+      setTimeout(() => dispatch(handleErrorNotification('')), 3000);
     });
   };
 
@@ -38,7 +32,7 @@ export const Header: React.FC<Props> = ({
           onClick={toggleAllCheckedOnServer}
         />
       )}
-      <TodoForm handleError={handleError} />
+      <NewTodoForm />
     </header>
   );
 };

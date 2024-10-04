@@ -1,15 +1,16 @@
 import { Status } from '../../types/Status';
-import { useDispatch, useGlobalState } from '../../GlobalStateProvider';
-import { Type } from '../../types/Action';
-import { Todo } from '../../types/Todo';
+import { useAppDispatch, useAppSelector } from '../../app/hooks';
+import {
+  handleErrorNotification,
+  removeTodo,
+  setLoadingTodos,
+  setStatus,
+} from '../../features/todosSlice';
 
-type Props = {
-  deleteTodosFromServer: (arg: Todo) => Promise<void>;
-};
-
-export const Footer: React.FC<Props> = ({ deleteTodosFromServer }) => {
-  const { todos, status } = useGlobalState();
-  const dispatch = useDispatch();
+export const Footer: React.FC = () => {
+  const todos = useAppSelector(state => state.todos.items);
+  const status = useAppSelector(state => state.todos.status);
+  const dispatch = useAppDispatch();
 
   const activeList = todos.filter(todo => !todo.completed);
   const completedList = todos.filter(todo => todo.completed);
@@ -18,8 +19,9 @@ export const Footer: React.FC<Props> = ({ deleteTodosFromServer }) => {
 
   const clearCompletedFromServer = () => {
     return completedList.forEach(todo => {
-      dispatch({ type: Type.setLoadingTodos, payload: todo.id });
-      deleteTodosFromServer(todo);
+      dispatch(setLoadingTodos(todo.id));
+      dispatch(removeTodo(todo));
+      setTimeout(() => dispatch(handleErrorNotification('')), 3000);
     });
   };
 
@@ -46,9 +48,7 @@ export const Footer: React.FC<Props> = ({ deleteTodosFromServer }) => {
               statusValue.charAt(0).toUpperCase() +
               statusValue.slice(1)
             }
-            onClick={() =>
-              dispatch({ type: Type.setStatus, payload: statusValue })
-            }
+            onClick={() => dispatch(setStatus(statusValue))}
           >
             {statusValue}
           </a>

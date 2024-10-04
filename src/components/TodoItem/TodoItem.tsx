@@ -1,73 +1,60 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
 import { useRef, useState } from 'react';
 import { Todo } from '../../types/Todo';
-import { useDispatch, useGlobalState } from '../../GlobalStateProvider';
-import { Type } from '../../types/Action';
-import { ErrorType } from '../../types/Errors';
-import { updateTodos } from '../../api/todos';
+import { useAppDispatch, useAppSelector } from '../../app/hooks';
+import {
+  removeTodo,
+  setEditingId,
+  setLoadingTodos,
+  updateTodoCheckStatus,
+  editTodoBody,
+  handleErrorNotification,
+} from '../../features/todosSlice';
 
 type Props = {
   todo: Todo;
-  deleteTodosFromServer: (a: Todo) => void;
-  handleError: (message: string) => void;
-  updateTodoCheckOnServer: (arg: Todo) => void;
 };
 
-export const TodoItem: React.FC<Props> = ({
-  todo,
-  deleteTodosFromServer,
-  handleError,
-  updateTodoCheckOnServer,
-}) => {
+export const TodoItem: React.FC<Props> = ({ todo }) => {
+  const dispatch = useAppDispatch();
   const [newTitle, setNewTitle] = useState(todo.title);
-  const { editingId, isSubmitting, loadingTodos, updatingId } =
-    useGlobalState();
-  const dispatch = useDispatch();
+  const isSubmitting = useAppSelector(state => state.todos.isSubmitting);
+  const editingId = useAppSelector(state => state.todos.editingId);
+  const updatingId = useAppSelector(state => state.todos.updatingId);
+  const loadingTodos = useAppSelector(state => state.todos.loadingTodos);
+
   const { id, completed, title } = todo;
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const isEditing = id === editingId;
 
-  const updateTodoOnServer = async (updatedTodo: Todo) => {
-    dispatch({ type: Type.setErrorMessage, payload: '' });
-    dispatch({ type: Type.setUpdatingId, payload: updatedTodo.id });
-
-    try {
-      const item = await updateTodos(updatedTodo);
-
-      dispatch({ type: Type.UpdateTodo, payload: item });
-      dispatch({ type: Type.setEditingId, payload: undefined });
-    } catch {
-      handleError(ErrorType.UPDATE_TODO);
-      dispatch({ type: Type.setEditingId, payload: updatedTodo.id });
-    } finally {
-      dispatch({ type: Type.setUpdatingId, payload: undefined });
-    }
-  };
-
   const updateTodo = (updatedTodo: Todo) => {
     if (updatedTodo.title) {
-      updateTodoOnServer(updatedTodo);
+      dispatch(editTodoBody(updatedTodo));
+      setTimeout(() => dispatch(handleErrorNotification('')), 3000);
     } else {
-      dispatch({ type: Type.setLoadingTodos, payload: updatedTodo.id });
-      deleteTodosFromServer(updatedTodo);
+      dispatch(setLoadingTodos(updatedTodo.id));
+      dispatch(removeTodo(updatedTodo));
+      setTimeout(() => dispatch(handleErrorNotification('')), 3000);
     }
   };
 
   const handleRemoveButton = (removedTodo: Todo) => {
-    deleteTodosFromServer(removedTodo);
-    dispatch({ type: Type.setLoadingTodos, payload: removedTodo.id });
+    dispatch(removeTodo(removedTodo));
+    setTimeout(() => dispatch(handleErrorNotification('')), 3000);
+
+    dispatch(setLoadingTodos(removedTodo.id));
   };
 
   const handleDoubleClick = (editedTodo: Todo) => {
-    dispatch({ type: Type.setEditingId, payload: editedTodo.id });
+    dispatch(setEditingId(editedTodo.id));
   };
 
   const updateTitle = () => {
     const trimmedTitle = newTitle.trim();
 
     if (trimmedTitle === title) {
-      dispatch({ type: Type.setEditingId, payload: undefined });
+      dispatch(setEditingId(undefined));
 
       return;
     }
@@ -85,13 +72,14 @@ export const TodoItem: React.FC<Props> = ({
     const isEsc = e.key === 'Escape' ? true : false;
 
     if (isEsc) {
-      dispatch({ type: Type.setEditingId, payload: undefined });
+      dispatch(setEditingId(undefined));
       setNewTitle(title);
     }
   };
 
   const handleCheck = (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateTodoCheckOnServer({ ...todo, completed: e.target.checked });
+    dispatch(updateTodoCheckStatus({ ...todo, completed: e.target.checked }));
+    setTimeout(() => dispatch(handleErrorNotification('')), 3000);
   };
 
   const handleNewTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
